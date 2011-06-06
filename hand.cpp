@@ -104,7 +104,7 @@ static bool isFlush(const QList<Card>& cards) {
 static bool isStraight(const QList<Card>& cards) {
     QList<Card> cardsByRank(cards);
     sort(cardsByRank.begin(), cardsByRank.end(), highRankCompare);
-    return isStraight(cards.begin(), cards.end());
+    return isStraight(cardsByRank.begin(), cardsByRank.end());
 }
 
 HandRank Hand::getRank() const
