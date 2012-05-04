@@ -1,7 +1,12 @@
-#include <QtCore>
 #include <algorithm>
+#include <iostream>
+#include <set>
+#include <unordered_map>
+#include <string>
 #include "card.h"
 #include "hand.h"
+
+using namespace std;
 
 struct HandStats {
     HandStats() : count(0) {
@@ -10,57 +15,55 @@ struct HandStats {
         }
     }
 
-    qulonglong count;
-    qulonglong outs[8];
+    unsigned long long count;
+    unsigned long long outs[8];
 };
 
-static QHash<QString,HandStats> stats;
+static unordered_map<string,HandStats> stats;
 
-void board(const QString& hole, const QSet<Card>& deck, const Hand& hand)
+void board(const string& hole, const set<Card>& deck, const Hand& hand)
 {
-    for (QSet<Card>::const_iterator i = deck.begin(); i != deck.end(); ++i) {
-        for (QSet<Card>::const_iterator j = i + 1; j != deck.end(); ++j) {
-            for (QSet<Card>::const_iterator k = j + 1; k != deck.end(); ++k) {
+    HandStats s;
+    for (set<Card>::const_iterator i = deck.begin(); i != deck.end(); ++i) {
+        set<Card>::const_iterator j = i;
+        for (++j; j != deck.end(); ++j) {
+            set<Card>::const_iterator k = j;
+            for (++k; k != deck.end(); ++k) {
                 Hand flop(hand);
                 flop.append(*i); flop.append(*j); flop.append(*k);
                 /*
-                for (QSet<Card>::const_iterator l = k + 1; l != deck.end(); ++l) {
-                    for (QSet<Card>::const_iterator m = l + 1; m != deck.end(); ++m) {
+                for (set<Card>::const_iterator l = k + 1; l != deck.end(); ++l) {
+                    for (set<Card>::const_iterator m = l + 1; m != deck.end(); ++m) {
 
                     }
                 }*/
-                stats[hole].count++;
-                stats[hole].outs[ flop.getRank() ]++;
+                s.count++;
+                s.outs[ flop.getRank() ]++;
             }
         }
     }
+    stats[hole] = s;
 }
 
 void printStats()
 {
-    QTextStream out(stdout);
-    QHashIterator<QString,HandStats> it(stats);
-    while (it.hasNext()) {
-        it.next();
-        QString hole = it.key();
-        out << hole << ',' << it.value().count;
-
-        HandStats handStats = it.value();
+    for (unordered_map<string,HandStats>::iterator it = stats.begin(); it != stats.end(); it++) {
+        string hole = it->first;
+        HandStats handStats = it->second;
         double count = handStats.count;
+
+        cout << hole << ',' << count;
         for (int i = 0; i < 8; ++i) {
-             out << ',' << (handStats.outs[i] / count);
+             cout << ',' << (handStats.outs[i] / count);
         }
-        out << endl;
+        cout << endl;
     }
 }
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
-    QTextStream qout(stdout);
-
     // Setup deck of cards
-    QSet<Card> deck;
+    set<Card> deck;
     for (Rank r = RANK_BEGIN; r != RANK_END; ++r) {
         for (Suit s = SUIT_BEGIN; s != SUIT_END; ++s) {
             Card card(r, s);
@@ -68,24 +71,24 @@ int main(int argc, char *argv[])
         }
     }
 
-    qulonglong count = 0;
+    unsigned long long count = 0;
 
     // Test each starting hand
-    for (QSet<Card>::iterator i = deck.begin(); i != deck.end(); ++i) {
-        for (QSet<Card>::iterator j = i + 1; j != deck.end(); ++j) {
-            QString hole = Card::pairString(*i, *j);
-            QSet<Card> test(deck);
+    for (set<Card>::iterator i = deck.begin(); i != deck.end(); ++i) {
+        set<Card>::iterator j = i;
+        for (++j; j != deck.end(); ++j) {
+            string hole = Card::pairString(*i, *j);
+            set<Card> test(deck);
             Hand hand;
-            test.remove(*i); hand.append(*i);
-            test.remove(*j); hand.append(*j);
+            test.erase(*i); hand.append(*i);
+            test.erase(*j); hand.append(*j);
             count++;
             board(hole, test, hand);
         }
     }
 
-    qout << "TOTAL: " << count << endl;
+    cout << "TOTAL: " << count << endl;
     printStats();
 
-    QTimer::singleShot(0, &a, SLOT(quit()));
-    return a.exec();
+    return 0;
 }

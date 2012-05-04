@@ -1,41 +1,44 @@
 #include <algorithm>
-#include <QDebug>
-#include <QHash>
-#include <QStringList>
 #include "hand.h"
 
 using namespace std;
 
-static const QStringList strHandRanks = QStringList() << "High Card" << "Pair" << "Two Pair" << "Three of a Kind" << "Straight" << "Flush" << "Full House" << "Four of a Kind" << "Straight Flush";
+static const char* strHandRanks[] = { "High Card", "Pair", "Two Pair",
+    "Three of a Kind", "Straight", "Flush", "Full House", "Four of a Kind",
+    "Straight Flush" };
 
-QTextStream& operator<<(QTextStream& out, const HandRank& hr) {
+ostream& operator<<(ostream& out, const HandRank& hr) {
     return out << strHandRanks[hr];
 }
 
-Hand::Hand() : QList<Card>()
+Hand::Hand() : cards()
 {
 }
 
-Hand::Hand(const Hand& other) : QList<Card>(other)
+Hand::Hand(const Hand& other) : cards(other.cards)
 {
+}
+
+void Hand::append(const Card& card)
+{
+    this->cards.push_back(card);
 }
 
 static bool highRankCompare(const Card& a, const Card& b) {
     return a > b;
 }
 
-static void findSets(const QList<Card>& cards, int& maxSize, int& pairCount)
+static void findSets(const vector<Card>& cards, int& maxSize, int& pairCount)
 {
     maxSize = 0;
     pairCount = 0;
 
-    QList<Card> cardsByRank(cards);
+    vector<Card> cardsByRank(cards);
     sort(cardsByRank.begin(), cardsByRank.end(), highRankCompare);
     int size = 0;
     Rank r = RANK_END;
-    HandIterator it(cardsByRank);
-    while (it.hasNext()) {
-        Card card = it.next();
+    for (vector<Card>::const_iterator it = cardsByRank.begin(); it != cardsByRank.end(); ++it) {
+        Card card = (*it);
         if (card.rank != r) {
             if (size > 1) {
                 maxSize = (size > maxSize) ? size : maxSize;
@@ -52,12 +55,12 @@ static void findSets(const QList<Card>& cards, int& maxSize, int& pairCount)
     }
 }
 
-static bool isStraight(QList<Card>::const_iterator first, QList<Card>::const_iterator last)
+static bool isStraight(vector<Card>::const_iterator first, vector<Card>::const_iterator last)
 {
     int count = 1;
 
-    QList<Card>::const_iterator it = first;
-    QList<Card>::const_iterator prev = it;
+    vector<Card>::const_iterator it = first;
+    vector<Card>::const_iterator prev = it;
     for (++it; it != last; ++it) {
         if (prev->rank == it->rank) {
             continue;
@@ -82,16 +85,16 @@ static bool suitRankCompare(const Card& a, const Card& b) {
     return a.suit < b.suit;
 }
 
-static bool isStraightFlush(const QList<Card>& cards) {
-    QList<Card> cardsBySuit(cards);
+static bool isStraightFlush(const vector<Card>& cards) {
+    vector<Card> cardsBySuit(cards);
     // By sorting into suits any straight we find is a straight flush
     sort(cardsBySuit.begin(), cardsBySuit.end(), suitRankCompare);
     return isStraight(cardsBySuit.begin(), cardsBySuit.end());
 }
 
-static bool isFlush(const QList<Card>& cards) {
+static bool isFlush(const vector<Card>& cards) {
     int suits[4] = { 0, 0, 0, 0 };
-    for (QList<Card>::const_iterator it = cards.begin(); it != cards.end(); ++it) {
+    for (vector<Card>::const_iterator it = cards.begin(); it != cards.end(); ++it) {
         int cardSuit = (int) it->suit;
         suits[cardSuit]++;
         if (suits[cardSuit] == 5) {
@@ -101,8 +104,8 @@ static bool isFlush(const QList<Card>& cards) {
     return false;
 }
 
-static bool isStraight(const QList<Card>& cards) {
-    QList<Card> cardsByRank(cards);
+static bool isStraight(const vector<Card>& cards) {
+    vector<Card> cardsByRank(cards);
     sort(cardsByRank.begin(), cardsByRank.end(), highRankCompare);
     return isStraight(cardsByRank.begin(), cardsByRank.end());
 }
@@ -111,17 +114,17 @@ HandRank Hand::getRank() const
 {
     int kindCount = 0;
     int pairCount = 0;
-    findSets(*this, kindCount, pairCount);
+    findSets(this->cards, kindCount, pairCount);
 
-    if (isStraightFlush(*this)) {
+    if (isStraightFlush(this->cards)) {
         return STRAIGHT_FLUSH;
     } else if (kindCount == 4) {
         return FOUR_OF_A_KIND;
     } else if (kindCount >= 3 && pairCount >= 2) {
         return FULL_HOUSE;
-    } else if (isFlush(*this)) {
+    } else if (isFlush(this->cards)) {
         return FLUSH;
-    } else if (isStraight(*this)) {
+    } else if (isStraight(this->cards)) {
         return STRAIGHT;
     } else if (kindCount >= 3) {
         return THREE_OF_A_KIND;
@@ -134,32 +137,26 @@ HandRank Hand::getRank() const
     }
 }
 
-QString Hand::toString() const
+template <typename Iter>
+Iter next(Iter iter)
 {
-    QStringList strList;
-    HandIterator it(*this);
-    while (it.hasNext()) {
-        strList.append(it.next().toString());
+    return ++iter;
+}
+
+string Hand::toString() const
+{
+    string str;
+    for (vector<Card>::const_iterator it = this->cards.begin(); it != this->cards.end();) {
+        str.append(it->toString());
+        ++it;
+        if (it != this->cards.end()) {
+            str.append(" ");
+        }
     }
-    return strList.join(" ");
+    return str;
 }
 
-QDebug& operator<<(QDebug &debug, const Hand& h)
-{
-    return debug << h.toString();
-}
-
-QTextStream& operator<<(QTextStream& out, const Hand& h)
+ostream& operator<<(ostream& out, const Hand& h)
 {
     return out << h.toString();
-}
-
-uint qHash(const Hand& key)
-{
-    uint hash = 17;
-    HandIterator it(key);
-    while (it.hasNext()) {
-        hash = hash * 37 + qHash(it.next());
-    }
-    return hash;
 }

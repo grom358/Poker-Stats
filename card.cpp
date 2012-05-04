@@ -1,4 +1,3 @@
-#include <QStringList>
 #include "card.h"
 
 template <class Enum> Enum& enum_increment(Enum& value, Enum begin, Enum end) {
@@ -9,59 +8,84 @@ Rank& operator++(Rank& rank) {
     return enum_increment(rank, RANK_BEGIN, RANK_END);
 }
 
+static char Ranks[] = { '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A' };
+
+std::ostream& operator<<(std::ostream& os, const Rank& r) {
+    return os << Ranks[r];
+}
+
+std::istream& operator>>(std::istream& is, Rank& r) {
+    char c;
+    is >> c;
+    for (int i = 0; i < 13; ++i) {
+        if (Ranks[i] == c) {
+            r = (Rank) i;
+            return is;
+        }
+    }
+    return is;
+}
+
 Suit& operator++(Suit& suit) {
     return enum_increment(suit, SUIT_BEGIN, SUIT_END);
 }
 
-static const QList<QChar> rankList = QList<QChar>() << '2' << '3' << '4' << '5' << '6' << '7' << '8' << '9' << 'T' << 'J' << 'Q' << 'K' << 'A' << '?';
-static const QList<QChar> suitList = QList<QChar>() << 'h' << 'd' << 'c' << 's' << '?';
+static char Suits[] = { 'h', 'd', 'c', 's' };
 
-QString Card::toString() const {
-    QString str;
-    str.append(rankList[rank]);
-    str.append(suitList[suit]);
+std::ostream& operator<<(std::ostream& os, const Suit& s) {
+    return os << Suits[s];
+}
+
+std::istream& operator>>(std::istream& is, Suit& s) {
+    char c;
+    is >> c;
+    for (int i = 0; i < 4; ++i) {
+        if (Suits[i] == c) {
+            s = (Suit) i;
+            return is;
+        }
+    }
+    return is;
+}
+
+std::string Card::toString() const {
+    std::string str;
+    str.append(1, Ranks[rank]);
+    str.append(1, Suits[suit]);
     return str;
 }
 
-QString Card::pairString(const Card& a, const Card& b)
+std::string Card::pairString(const Card& a, const Card& b)
 {
-    QString str;
+    std::string str;
     if (a > b) {
-        str.append(rankList[a.rank]);
-        str.append(rankList[b.rank]);
+        str.append(1, Ranks[a.rank]);
+        str.append(1, Ranks[b.rank]);
     } else {
-        str.append(rankList[b.rank]);
-        str.append(rankList[a.rank]);
+        str.append(1, Ranks[b.rank]);
+        str.append(1, Ranks[a.rank]);
     }
     if (a.suit == b.suit) {
-        str.append('s');
+        str.append(1, 's');
     }
     return str;
 }
 
-Card Card::fromString(const QString& str) {
-    int i = rankList.indexOf(str[0]);
+int indexOf(const char& letter, const char* list, int n) {
+    for (int i = 0; i < n; ++i) {
+        if (list[i] == letter) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+Card Card::fromString(const std::string& str) {
+    int i = indexOf(str[0], Ranks, RANK_END);
     Rank rank = (i == -1) ? RANK_END : ((Rank) i);
-    i = suitList.indexOf(str[1]);
+    i = indexOf(str[1], Suits, SUIT_END);
     Suit suit = (i == -1) ? SUIT_END : ((Suit) i);
     return Card(rank, suit);
-}
-
-QDebug& operator<<(QDebug &debug, const Card& c) {
-    return debug << c.toString();
-}
-
-QTextStream& operator<<(QTextStream& out, const Card& c) {
-    return out << c.toString();
-}
-
-QTextStream& operator>>(QTextStream& in, Card& c) {
-    QChar r, s;
-    in >> r >> s;
-    QString str(r);
-    str.append(s);
-    c = Card::fromString(str);
-    return in;
 }
 
 Card& Card::operator=(const Card &rhs) {
@@ -94,6 +118,14 @@ bool operator>(const Card& a, const Card& b) {
     return a.rank > b.rank;
 }
 
-uint qHash(const Card& key) {
-    return qHash(key.rank * 4 + key.suit);
+size_t card_hash(const Card& key) {
+    return key.rank * 4 + key.suit;
+}
+
+std::ostream& operator<<(std::ostream& os, const Card& c) {
+    return os << c.rank << c.suit;
+}
+
+std::istream& operator>>(std::istream& is, Card& c) {
+    return is >> c.rank >> c.suit;
 }

@@ -1,31 +1,28 @@
 #ifndef __HAND_H__
 #define __HAND_H__
 
-#include <QDebug>
-#include <QList>
-#include <QString>
-#include <QTextStream>
+#include <iostream>
+#include <vector>
 #include "card.h"
 
 enum HandRank { HIGH_CARD, ONE_PAIR, TWO_PAIR, THREE_OF_A_KIND, STRAIGHT, FLUSH, FULL_HOUSE, FOUR_OF_A_KIND, STRAIGHT_FLUSH };
 
-QTextStream& operator<<(QTextStream& out, const HandRank& hr);
+std::ostream& operator<<(std::ostream& out, const HandRank& hr);
 
-class Hand : public QList<Card> {
+class Hand {
 public:
-    Hand();
+    Hand();    
     Hand(const Hand& other);
+    
+    void append(const Card& card);
 
-    QString toString() const;
+    std::string toString() const;
 
     HandRank getRank() const;
+private:
+    std::vector<Card> cards;
 };
 
-typedef QListIterator<Card> HandIterator;
-
-QDebug& operator<<(QDebug &debug, const Hand& h);
-QTextStream& operator<<(QTextStream& out, const Hand& h);
-
-uint qHash(const Hand& key);
+std::ostream& operator<<(std::ostream& os, const Hand& h);
 
 #endif
