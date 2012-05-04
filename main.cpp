@@ -1,12 +1,21 @@
 #include <algorithm>
 #include <iostream>
-#include <set>
+#include <unordered_set>
 #include <unordered_map>
 #include <string>
 #include "card.h"
 #include "hand.h"
 
 using namespace std;
+
+class CardHash {
+public:
+    size_t operator()(const Card& key) const {
+        return key.rank * 4 + key.suit;
+    }
+};
+
+typedef unordered_set<Card,CardHash> CardSet;
 
 struct HandStats {
     HandStats() : count(0) {
@@ -21,24 +30,24 @@ struct HandStats {
 
 static unordered_map<string,HandStats> stats;
 
-void board(const string& hole, const set<Card>& deck, const Hand& hand)
-{
-    HandStats s;
-    for (set<Card>::const_iterator i = deck.begin(); i != deck.end(); ++i) {
-        set<Card>::const_iterator j = i;
-        for (++j; j != deck.end(); ++j) {
-            set<Card>::const_iterator k = j;
-            for (++k; k != deck.end(); ++k) {
-                Hand flop(hand);
-                flop.append(*i); flop.append(*j); flop.append(*k);
-                /*
-                for (set<Card>::const_iterator l = k + 1; l != deck.end(); ++l) {
-                    for (set<Card>::const_iterator m = l + 1; m != deck.end(); ++m) {
+size_t board_rank(const Hand& hand, Card flop1, Card flop2, Card flop3) {
+    Hand flop(hand);
+    flop.append(flop1);
+    flop.append(flop2);
+    flop.append(flop3);
+    return flop.getRank();
+}
 
-                    }
-                }*/
+void board(const string& hole, const CardSet& deck, const Hand& hand)
+{
+    HandStats s = stats[hole];
+    for (CardSet::const_iterator i = deck.begin(); i != deck.end(); ++i) {
+        CardSet::const_iterator j = i;
+        for (++j; j != deck.end(); ++j) {
+            CardSet::const_iterator k = j;
+            for (++k; k != deck.end(); ++k) {                
                 s.count++;
-                s.outs[ flop.getRank() ]++;
+                s.outs[ board_rank(hand, *i, *j, *k) ]++;
             }
         }
     }
@@ -63,7 +72,7 @@ void printStats()
 int main(int argc, char *argv[])
 {
     // Setup deck of cards
-    set<Card> deck;
+    CardSet deck;
     for (Rank r = RANK_BEGIN; r != RANK_END; ++r) {
         for (Suit s = SUIT_BEGIN; s != SUIT_END; ++s) {
             Card card(r, s);
@@ -74,11 +83,11 @@ int main(int argc, char *argv[])
     unsigned long long count = 0;
 
     // Test each starting hand
-    for (set<Card>::iterator i = deck.begin(); i != deck.end(); ++i) {
-        set<Card>::iterator j = i;
+    for (CardSet::const_iterator i = deck.begin(); i != deck.end(); ++i) {
+        CardSet::const_iterator j = i;
         for (++j; j != deck.end(); ++j) {
             string hole = Card::pairString(*i, *j);
-            set<Card> test(deck);
+            CardSet test(deck);
             Hand hand;
             test.erase(*i); hand.append(*i);
             test.erase(*j); hand.append(*j);

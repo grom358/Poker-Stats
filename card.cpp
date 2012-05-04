@@ -118,10 +118,6 @@ bool operator>(const Card& a, const Card& b) {
     return a.rank > b.rank;
 }
 
-size_t card_hash(const Card& key) {
-    return key.rank * 4 + key.suit;
-}
-
 std::ostream& operator<<(std::ostream& os, const Card& c) {
     return os << c.rank << c.suit;
 }

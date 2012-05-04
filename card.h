@@ -42,6 +42,4 @@ bool operator>(const Card& a, const Card& b);
 std::ostream& operator<<(std::ostream& os, const Card& c);
 std::istream& operator>>(std::istream& is, Card& c);
 
-size_t card_hash(const Card& key);
-
 #endif
