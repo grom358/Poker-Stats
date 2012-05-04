@@ -55,7 +55,7 @@ static void findSets(const vector<Card>& cards, int& maxSize, int& pairCount)
     }
 }
 
-static bool isStraight(vector<Card>::const_iterator first, vector<Card>::const_iterator last)
+static bool isStraight(vector<Card>::const_iterator first, vector<Card>::const_iterator last, bool checkFlush)
 {
     int count = 1;
 
@@ -67,6 +67,9 @@ static bool isStraight(vector<Card>::const_iterator first, vector<Card>::const_i
         }
 
         if (prev->rank != it->rank + 1) {
+            count = 0;
+        }
+        if (checkFlush && prev->suit != it->suit) {
             count = 0;
         }
         count++;
@@ -87,9 +90,9 @@ static bool suitRankCompare(const Card& a, const Card& b) {
 
 static bool isStraightFlush(const vector<Card>& cards) {
     vector<Card> cardsBySuit(cards);
-    // By sorting into suits any straight we find is a straight flush
+    // Sort into suit/rank order and test the straight is in the same suit
     sort(cardsBySuit.begin(), cardsBySuit.end(), suitRankCompare);
-    return isStraight(cardsBySuit.begin(), cardsBySuit.end());
+    return isStraight(cardsBySuit.begin(), cardsBySuit.end(), true);
 }
 
 static bool isFlush(const vector<Card>& cards) {
@@ -107,7 +110,7 @@ static bool isFlush(const vector<Card>& cards) {
 static bool isStraight(const vector<Card>& cards) {
     vector<Card> cardsByRank(cards);
     sort(cardsByRank.begin(), cardsByRank.end(), highRankCompare);
-    return isStraight(cardsByRank.begin(), cardsByRank.end());
+    return isStraight(cardsByRank.begin(), cardsByRank.end(), false);
 }
 
 HandRank Hand::getRank() const
