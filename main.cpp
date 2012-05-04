@@ -30,12 +30,11 @@ struct HandStats {
 
 static unordered_map<string,HandStats> stats;
 
-size_t board_rank(const Hand& hand, Card flop1, Card flop2, Card flop3) {
-    Hand flop(hand);
-    flop.append(flop1);
-    flop.append(flop2);
-    flop.append(flop3);
-    return flop.getRank();
+size_t board_rank(Hand hand, Card flop1, Card flop2, Card flop3) {
+    hand.append(flop1);
+    hand.append(flop2);
+    hand.append(flop3);
+    return hand.getRank();
 }
 
 void board(const string& hole, const CardSet& deck, const Hand& hand)
