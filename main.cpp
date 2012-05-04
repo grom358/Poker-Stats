@@ -19,13 +19,13 @@ typedef unordered_set<Card,CardHash> CardSet;
 
 struct HandStats {
     HandStats() : count(0) {
-        for (int i = 0; i < 8; ++i) {
+        for (int i = 0; i < HAND_RANK_END; ++i) {
             outs[i] = 0;
         }
     }
 
     unsigned long long count;
-    unsigned long long outs[8];
+    unsigned long long outs[HAND_RANK_END];
 };
 
 static unordered_map<string,HandStats> stats;
@@ -61,7 +61,7 @@ void printStats()
         double count = handStats.count;
 
         cout << hole << ',' << count;
-        for (int i = 0; i < 8; ++i) {
+        for (int i = 0; i < HAND_RANK_END; ++i) {
              cout << ',' << (handStats.outs[i] / count);
         }
         cout << endl;
